@@ -137,7 +137,10 @@ class lda_plus_u:
             conv_bands_label = 'occupied'
         else:
             conv_bands_label = self.args['conv_bands']
-
+        xc_label = {'lda': 'LDA', 'pbe': 'PBE', 'revpbe': 'revPBE',
+                    'rpbe': 'RPBE', 'pbe0': 'PBE0', 'b3lyp': 'B3LYP',
+                    'vdw-df': 'vdW-DF', 'vdw-df2': 'vdW-DF2',
+                    'gllbsc': 'GLLBSC'}
         inic = {
             'convergence': {
                 'energy': self.args['etol'],
@@ -147,7 +150,7 @@ class lda_plus_u:
             },
             'maxiter': self.args['maxcycl'],
             'kpts': self.args['kmesh'],
-            'xc': self.args['xc'].upper(),
+            'xc': xc_label[self.args['xc'].lower()],
             'spinpol': self.args['spin_pol'],
             'txt': self.get_label() + '.txt'
         }
