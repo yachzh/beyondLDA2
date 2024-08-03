@@ -21,6 +21,30 @@ This script provides a simple way to perform LDA+U calculations using GPAW. The 
 treating strongly correlated systems, 
 and this program aims to make it easy to use this method within the ASE framework.
 
+## Installation
+---------------
+
+To use the package, simply clone the repository and install the required dependencies:
+```bash
+git clone https://github.com/yachzh/beyondLDA2.git
+cd beyondLDA2
+pip install -r requirements.txt
+
+Successfully compiling GPAW might require the installation of the libxc library:
+```bash
+wget https://gitlab.com/libxc/libxc/-/archive/6.2.2/libxc-6.2.2.tar.bz2
+tar -jxvf libxc-6.2.2.tar.bz2
+cd libxc-6.2.2
+autoreconf -i configure.ac
+./configure --enable-shared --disable-fortran --prefix=$HOME/.local/apps/libxc-6.2.2
+make
+make install
+
+export xc_src=$HOME/.local/apps/libxc-6.2.2
+export C_INCLUDE_PATH=$xc_src/include
+export LIBRARY_PATH=$xc_src/lib
+export LD_LIBRARY_PATH=$xc_src/lib
+
 ## Example Usage
 ---------------
 
