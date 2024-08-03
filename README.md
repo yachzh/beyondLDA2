@@ -29,6 +29,7 @@ To use the package, simply clone the repository and install the required depende
 git clone https://github.com/yachzh/beyondLDA2.git
 cd beyondLDA2
 pip install -r requirements.txt
+```
 
 Successfully compiling GPAW might require the installation of the libxc library:
 ```bash
@@ -44,6 +45,7 @@ export xc_src=$HOME/.local/apps/libxc-6.2.2
 export C_INCLUDE_PATH=$xc_src/include
 export LIBRARY_PATH=$xc_src/lib
 export LD_LIBRARY_PATH=$xc_src/lib
+```
 
 ## Example Usage
 ---------------
@@ -105,4 +107,4 @@ resultfile.write('E_hl = %5.1f kJ/mol\n' % e_hl) # => E_hl =  83.0 kJ/mol
 
 # Close the output file
 resultfile.close()
-
+```
