@@ -1,8 +1,8 @@
 # beyondLDA2
-================
+---------------
 
-A Python program designed to carry out LDA+U and G0W0 computations with the Atomic Simulation Environment (ASE) and GPAW, 
-specifically aimed at extended molecular materials with magnetic centers such as Mn, Fe, Co, and Ni.
+A Python application created to execute LDA+U and G0W0 calculations using the Atomic Simulation Environment (ASE) and GPAW, 
+targeting the simulation of extended molecular materials with magnetic centers like Mn, Fe, Co, and Ni.
 
 - Total electronic energy
 - Global optimization of atomic structures
