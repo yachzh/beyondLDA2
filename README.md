@@ -41,10 +41,14 @@ autoreconf -i configure.ac
 make
 make install
 
-export xc_src=$HOME/.local/apps/libxc-6.2.2
-export C_INCLUDE_PATH=$xc_src/include
-export LIBRARY_PATH=$xc_src/lib
-export LD_LIBRARY_PATH=$xc_src/lib
+export C_INCLUDE_PATH=$HOME/.local/apps/libxc-6.2.2/include
+export LIBRARY_PATH=$HOME/.local/apps/libxc-6.2.2/lib
+export LD_LIBRARY_PATH=$HOME/.local/apps/libxc-6.2.2/lib
+```
+
+Once you have installed gpaw, use the following command to install the GPAW setups:
+```bash
+gpaw install-data $HOME/.local
 ```
 
 ## Example Usage
