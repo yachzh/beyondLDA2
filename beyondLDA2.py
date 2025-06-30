@@ -137,10 +137,17 @@ class lda_plus_u:
             conv_bands_label = 'occupied'
         else:
             conv_bands_label = self.args['conv_bands']
-        xc_label = {'lda': 'LDA', 'pbe': 'PBE', 'revpbe': 'revPBE',
-                    'rpbe': 'RPBE', 'pbe0': 'PBE0', 'b3lyp': 'B3LYP',
-                    'vdw-df': 'vdW-DF', 'vdw-df2': 'vdW-DF2',
-                    'gllbsc': 'GLLBSC'}
+        xc_label = {
+            'lda': 'LDA',
+            'pbe': 'PBE',
+            'revpbe': 'revPBE',
+            'rpbe': 'RPBE',
+            'pbe0': 'PBE0',
+            'b3lyp': 'B3LYP',
+            'vdw-df': 'vdW-DF',
+            'vdw-df2': 'vdW-DF2',
+            'gllbsc': 'GLLBSC'
+        }
         inic = {
             'convergence': {
                 'energy': self.args['etol'],
@@ -256,7 +263,7 @@ class lda_plus_u:
 
     def get_electronic_energy(self, write_wave=False):
         calc = self.get_calc()
-        self.args['atoms'].set_calculator(calc)
+        self.args['atoms'].calc = calc
         energy = self.args['atoms'].get_potential_energy()
         if write_wave:
             gpwfile = '%s.gpw' % self.get_label()
@@ -543,8 +550,7 @@ class lda_plus_u:
         self.args['atoms'].set_calculator(calc)
         label = self.get_label()
         if vibIndices is None:
-            vib = Vibrations(self.args['atoms'],
-                             name=f'{label}-vibmode')
+            vib = Vibrations(self.args['atoms'], name=f'{label}-vibmode')
         else:
             vib = Vibrations(self.args['atoms'],
                              indices=vibIndices,
@@ -555,5 +561,5 @@ class lda_plus_u:
 
         with open(f'{label}vib.pickle', 'wb') as f:
             pickle.dump(vib_energies, f)
-        vib.write_dos(out=label+'vib-dos.dat', start=0, width=25, npts=5000)
+        vib.write_dos(out=label + 'vib-dos.dat', start=0, width=25, npts=5000)
         vib.write_jmol()
