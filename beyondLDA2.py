@@ -31,7 +31,39 @@ from gpaw.external import ConstantElectricField
 from ase.calculators.dftd3 import DFTD3
 from ase.vibrations import Vibrations
 from ase.parallel import paropen
-from cmp_version import cmp_version
+
+
+def version_compare(current_version, min_version):
+    """
+    Compare two version strings (e.g., '22.8' and '22.7').
+
+    Returns:
+        - Negative number if current_version is less than min_version,
+        - Zero if they are equal,
+        - Positive number if current_version is greater than min_version.
+    """
+    def parse_version(version_str):
+        try:
+            return list(map(int, str(version_str).split('.')))
+        except ValueError:
+            raise ValueError(f"Invalid version string: {version_str}")
+
+    current = parse_version(current_version)
+    minimum = parse_version(min_version)
+
+    # Pad the shorter version with zeros for comparison
+    max_length = max(len(current), len(minimum))
+    current += [0] * (max_length - len(current))
+    minimum += [0] * (max_length - len(minimum))
+
+    for c, m in zip(current, minimum):
+        if c < m:
+            return -1
+        elif c > m:
+            return 1
+
+    # All parts are equal up to the length of both versions
+    return 0
 
 
 def qpbandgap(result):
@@ -213,7 +245,7 @@ class lda_plus_u:
 
         if self.args['dipcorr']:
             self.args['atoms'].set_pbc((True, True, False))
-            if cmp_version(self.gpv, 22.8) < 0:
+            if version_compare(self.gpv, 22.8) < 0:
                 poissonsolver = PoissonSolver()
                 correction = DipoleCorrection(poissonsolver, 2)
                 cell = self.args['atoms'].cell
@@ -316,7 +348,7 @@ class lda_plus_u:
                     domega0=0.025,
                     omega2=10.0,
                     is2D=False):
-        if cmp_version(self.gpv, 22.8) >= 0:
+        if version_compare(self.gpv, 22.8) >= 0:
             self.args['domain_parallel'] = True
         fname = self.get_label()
         f = paropen(f'result-{fname}.txt', 'w')
@@ -342,7 +374,7 @@ class lda_plus_u:
             nblocksmax = False
         else:
             nblocksmax = True
-        if cmp_version(self.gpv, 22.8) < 0:
+        if version_compare(self.gpv, 22.8) < 0:
             gw = G0W0(
                 calc=f'{fname}.gpw',
                 ecut=ecut,  # plane-wave cutoff for self-energy

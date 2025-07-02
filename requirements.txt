@@ -1,3 +1,2 @@
-ase==3.22.1
-cmp_version==2.0.0
-gpaw==22.8.0
+ase
+gpaw
