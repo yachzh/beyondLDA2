@@ -533,7 +533,7 @@ class lda_plus_u:
                   fix_index_set=None,
                   varcell=False):
         calc = self.get_calc()
-        self.args['atoms'].set_calculator(calc)
+        self.args['atoms'].calc = calc
 
         if fix_atoms:
             constraint = FixAtoms(indices=fix_index_set)
@@ -565,7 +565,7 @@ class lda_plus_u:
             max_temperature=1250,  # in K
             totstep=20):
         calc = self.get_calc()
-        self.args['atoms'].set_calculator(calc)
+        self.args['atoms'].calc = calc
 
         if fix_atoms:
             constraint = FixAtoms(indices=fix_index_set)
@@ -579,7 +579,8 @@ class lda_plus_u:
 
     def phonon(self, vibIndices=None):
         calc = self.get_calc()
-        self.args['atoms'].set_calculator(calc)
+        self.args['atoms'].calc = calc
+
         label = self.get_label()
         if vibIndices is None:
             vib = Vibrations(self.args['atoms'], name=f'{label}-vibmode')
