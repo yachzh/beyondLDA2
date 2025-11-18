@@ -9,6 +9,7 @@ based on GPAW and ASE
 @date April 30, 2022 11:21 PM
 """
 
+import os
 import pickle
 import time
 import numpy as np
@@ -19,7 +20,7 @@ from gpaw.response.g0w0 import G0W0
 from ase.optimize.minimahopping import MinimaHopping
 from ase.optimize import QuasiNewton, BFGS
 from gpaw.wavefunctions.pw import PW
-from ase.io import write
+from ase.io import read, write
 from ase.units import kB
 from gpaw import GPAW, FermiDirac
 from gpaw.mixer import MixerSum, Mixer
@@ -30,7 +31,7 @@ from ase.constraints import FixAtoms, ExpCellFilter
 from gpaw.external import ConstantElectricField
 from ase.calculators.dftd3 import DFTD3
 from ase.vibrations import Vibrations
-from ase.parallel import paropen
+from ase.parallel import paropen, parprint
 
 
 def version_compare(current_version, min_version):
@@ -533,6 +534,13 @@ class lda_plus_u:
                   fix_index_set=None,
                   varcell=False):
         calc = self.get_calc()
+
+        fn_traj = f'qn-{self.get_label()}.traj'
+        if os.path.exists(fn_traj):
+            parprint(
+                f'Structure optimization restarting from trajectory {fn_traj}')
+            self.args['atoms'] = read(fn_traj)
+
         self.args['atoms'].calc = calc
 
         if fix_atoms:
@@ -541,12 +549,16 @@ class lda_plus_u:
 
         if varcell and self.args['planewave']:
             opt = optimizer(ExpCellFilter(self.args['atoms']),
-                            trajectory='qn-%s.traj' % self.get_label(),
-                            maxstep=maxstep)
+                            trajectory=fn_traj,
+                            maxstep=maxstep,
+                            append_trajectory=True)
         else:
             opt = optimizer(self.args['atoms'],
-                            trajectory='qn-%s.traj' % self.get_label(),
-                            maxstep=maxstep)
+                            trajectory=fn_traj,
+                            maxstep=maxstep,
+                            append_trajectory=True)
+        if os.path.exists(fn_traj):
+            opt.replay_trajectory(fn_traj)
 
         opt.run(fmax=force_convergence)
         write('%s-opt.xyz' % self.get_label(), self.args['atoms'])
