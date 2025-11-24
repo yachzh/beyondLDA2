@@ -536,10 +536,13 @@ class lda_plus_u:
         calc = self.get_calc()
 
         fn_traj = f'qn-{self.get_label()}.traj'
-        if os.path.exists(fn_traj):
-            parprint(
-                f'Structure optimization restarting from trajectory {fn_traj}')
-            self.args['atoms'] = read(fn_traj)
+        restart_needed = False
+
+        if os.path.exists(fn_traj) and os.path.getsize(fn_traj) > 0:
+            parprint(f"Found existing trajectory: {fn_traj}")
+            parprint("Reading latest positions...")
+            self.args['atoms'] = read(fn_traj, index=-1)
+            restart_needed = True
 
         self.args['atoms'].calc = calc
 
@@ -557,7 +560,7 @@ class lda_plus_u:
                             trajectory=fn_traj,
                             maxstep=maxstep,
                             append_trajectory=True)
-        if os.path.exists(fn_traj):
+        if restart_needed:
             opt.replay_trajectory(fn_traj)
 
         opt.run(fmax=force_convergence)
