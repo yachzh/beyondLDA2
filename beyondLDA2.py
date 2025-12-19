@@ -1,12 +1,17 @@
 """
----------------------------------------------------------------------
-Single-point calculations and structural relaxations of
-molecular materials containing magnetic centers (Mn, Fe, Co, and Ni)
-based on GPAW and ASE
----------------------------------------------------------------------
-@author Yachao Zhang
-@email yachao.zhang@pku.edu.cn
-@date April 30, 2022 11:21 PM
+Molecular Magnetism Script
+--------------------------
+Core functionality:
+1. Single-point energy calculations.
+2. Structural geometry relaxation.
+3. Support for Mn, Fe, Co, and Ni magnetic centers.
+
+Frameworks: GPAW (Density Functional Theory), ASE
+
+@author: Yachao Zhang
+@contact: yachao.zhang@pku.edu.cn
+@created: 2022-04-30
+@license: MIT
 """
 
 import os
@@ -31,7 +36,7 @@ from ase.constraints import FixAtoms, ExpCellFilter
 from gpaw.external import ConstantElectricField
 from ase.calculators.dftd3 import DFTD3
 from ase.vibrations import Vibrations
-from ase.parallel import paropen, parprint
+from ase.parallel import paropen, parprint, world
 
 
 def version_compare(current_version, min_version):
@@ -150,6 +155,7 @@ class lda_plus_u:
             conv_bands=None,
             dipcorr=False,
             conv_default=False,
+            semicore=False,
             kp_shift=False,
             domain_parallel=False,
             fname=None):
@@ -231,10 +237,18 @@ class lda_plus_u:
                                          fixmagmom=self.args['fixspin'])
         inic['mixer'] = mixer
 
+        # inclusion of semi-core electrons in the magnetic center
+        if self.args['semicore'] and self.args['magnetic_center'] is not None:
+            metal = self.args['magnetic_center']
+            inic['setups'] = {metal.capitalize(): 'pv'}
+
         Ueff = self.args['hubbard_u']
         if abs(Ueff) > 1.e-6:
             metal = self.args['magnetic_center']
-            inic['setups'] = {metal.capitalize(): ':d,%.4f' % Ueff}
+            if self.args['semicore']:
+                inic['setups'] = {metal.capitalize(): 'pv:d,%.4f' % Ueff}
+            else:
+                inic['setups'] = {metal.capitalize(): ':d,%.4f' % Ueff}
 
         if abs(self.args['charge']) > 1.e-6:
             inic['charge'] = self.args['charge']
@@ -540,9 +554,20 @@ class lda_plus_u:
 
         if os.path.exists(fn_traj) and os.path.getsize(fn_traj) > 0:
             parprint(f"Found existing trajectory: {fn_traj}")
-            parprint("Reading latest positions...")
-            self.args['atoms'] = read(fn_traj, index=-1)
-            restart_needed = True
+            try:
+                atoms_tmp = read(fn_traj, index=-1)
+                # If successful, store the atoms temporarily to share later
+                self.args['atoms'] = atoms_tmp
+                restart_needed = True
+                parprint(f"Successfully validated {fn_traj}")
+                parprint("Reading latest positions...")
+            except (StopIteration, IndexError, EOFError):
+                parprint(f"Trajectory {fn_traj} is corrupted. Renaming...")
+                if world.rank == 0:
+                    os.rename(fn_traj, fn_traj + '.corrupt')
+                restart_needed = False
+        else:
+            restart_needed = False
 
         self.args['atoms'].calc = calc
 
