@@ -14,9 +14,11 @@ Frameworks: GPAW (Density Functional Theory), ASE
 @license: MIT
 """
 
+import sys
 import os
 import pickle
 import time
+from pathlib import Path
 import numpy as np
 import gpaw
 from gpaw.response.df import DielectricFunction
@@ -112,6 +114,61 @@ def sec2time(wall_time):
     seconds = total_seconds % 60
 
     return f'{hours}:{minutes}:{seconds}'
+
+
+def log_message(msg):
+    """Helper to print and flush immediately"""
+    parprint(msg)
+    # Only the master rank (rank 0) handles stdout in parprint
+    if world.rank == 0:
+        sys.stdout.flush()
+
+
+def log_job_path(filename, status="START"):
+    abs_path = Path(filename).resolve()
+    message = f'JOB_PATH_RECORD: status={status} path="{abs_path}"'
+    log_message(message)
+
+
+def watch_conv(gpaw_out, mag_center=None):
+    """Monitors GPAW SCF convergence and magnetic moments"""
+    try:
+        with paropen(gpaw_out, 'r') as f:
+            lines = f.readlines()
+
+            # 1. Extract SCF iterations
+            # GPAW iterations usually start with 'iter:' or appear in a table
+            scf_matches = [line.strip() for line in lines if 'iter:' in line]
+            if scf_matches:
+                log_message("--- Last 10 SCF Iterations ---")
+                for match in scf_matches[-10:]:
+                    log_message(match)
+
+            # 2. Extract Total Magnetic Moment
+            mag_matches = [line.strip()
+                           for line in lines if 'Total magnetic moment:' in line]
+            if mag_matches:
+                log_message("\n--- Total Magnetic Moment ---")
+                log_message(mag_matches[-1])
+
+            if mag_center is not None:
+                # 3. Extract Local Moments (e.g., for Fe center)
+                # We look for lines containing 'Fe (' as per your grep logic
+                tm = mag_center.capitalize()
+                log_message(f"\n--- Local Moments ({tm}) ---")
+                local_matches = [line.strip()
+                                 for line in lines if f'{tm} (' in line]
+                if local_matches:
+                    # Taking the last one to show the most recent update
+                    log_message(local_matches[-1])
+                else:
+                    log_message(
+                        f"Local {tm} moment not yet calculated or found.")
+
+    except FileNotFoundError:
+        log_message(f"Waiting for GPAW output file: {gpaw_out}")
+    except Exception as e:
+        log_message(f"Error reading GPAW output: {str(e)}")
 
 
 class lda_plus_u:
@@ -280,6 +337,7 @@ class lda_plus_u:
         if self.args['vdw']:
             d3 = DFTD3(dft=calc)
             return d3
+        log_job_path(self.get_label() + '.txt')
         return calc
 
     def set_magnetic_moment(self):
@@ -315,7 +373,8 @@ class lda_plus_u:
         if write_wave:
             gpwfile = '%s.gpw' % self.get_label()
             calc.write(gpwfile, mode='all')
-
+        watch_conv(self.get_label() + '.txt',
+                   mag_center=self.args['magnetic_center'])
         return energy
 
     def get_ksgap(self, write_wave=False):
@@ -593,6 +652,9 @@ class lda_plus_u:
         write('%s-opt.struct' % self.get_label(), self.args['atoms'])
         write('%s-opt.vasp' % self.get_label(), self.args['atoms'])
         energy = self.args['atoms'].get_potential_energy()
+        watch_conv(self.get_label() + '.txt',
+                   mag_center=self.args['magnetic_center'])
+
         return energy
 
     def global_opt(
