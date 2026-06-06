@@ -41,8 +41,8 @@ Magnetic moments are assigned automatically to the element matching
 
 ## Requirements
 
-- **GPAW** ≥ 24.6.0 (tested with 24.6.0 and 25.7.0)
-- **ASE** ≥ 3.25.0 (tested with 3.25.0 and 3.28.0)
+- **GPAW** ≥ 20.1.0 (tested with 20.1.0, 24.6.0, 25.7.0)
+- **ASE** ≥ 3.20.0 (tested with 3.20.0, 3.25.0, 3.28.0)
 - **libxc** ≥ 5.2.3 (required by GPAW)
 - numpy, scipy
 
@@ -166,8 +166,10 @@ timing breakdown, memory). The filename is controlled by the `fname` parameter
   `ls.STRUCT_OUT` files.
 - The module is **parallel-safe**: uses `paropen` / `parprint` for MPI-aware
   I/O. Domain parallelization can be enabled for G0W0/BSE.
-- Tested with GPAW 24.6.0 + ASE 3.25.0 and GPAW 25.7.0 + ASE 3.28.0 on a
-  single core (LCAO-LDA+U). Results are identical across versions.
+- **Version compatibility**: tested with GPAW 20.1.0–25.7.0 and ASE
+  3.20.0–3.28.0 (LCAO-LDA+U on a single core). Results are bitwise identical
+  across versions. The `ExpCellFilter` import adapts to ASE ≥ 3.22 vs. earlier
+  releases automatically.
 
 ## License
 
