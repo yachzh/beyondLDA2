@@ -163,7 +163,7 @@ timing breakdown, memory). The filename is controlled by the `fname` parameter
   and RPA calculations.
 - **Structural input** is read from external files (`.STRUCT_OUT`, .xyz, etc.)
   via ASE's `read()`. The repository includes example `hs.STRUCT_OUT` and
-  `ls.STRUCT_OUT` files.
+  `ls.STRUCT_OUT` files in the `tests/` directory.
 - The module is **parallel-safe**: uses `paropen` / `parprint` for MPI-aware
   I/O. Domain parallelization can be enabled for G0W0/BSE.
 - **Version compatibility**: tested with GPAW 20.1.0–25.7.0 and ASE

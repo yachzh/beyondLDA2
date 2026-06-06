@@ -29,7 +29,7 @@ SCRATCH = os.environ.get(
 os.makedirs(SCRATCH, exist_ok=True)
 
 # Copy input structure to scratch (beyondLDA2 outputs are relative to CWD)
-struct_src = os.path.join(_repo_root, 'ls.STRUCT_OUT')
+struct_src = os.path.join(_script_dir, 'ls.STRUCT_OUT')
 struct_dst = os.path.join(SCRATCH, 'ls.STRUCT_OUT')
 if not os.path.exists(struct_dst):
     shutil.copy2(struct_src, struct_dst)
