@@ -34,7 +34,11 @@ from gpaw.mixer import MixerSum, Mixer
 from gpaw.poisson import PoissonSolver
 from gpaw.dipole_correction import DipoleCorrection
 from gpaw.utilities import h2gpts
-from ase.constraints import FixAtoms, ExpCellFilter
+from ase.constraints import FixAtoms
+try:
+    from ase.filters import ExpCellFilter  # ASE >= 3.22
+except ImportError:
+    from ase.constraints import ExpCellFilter  # ASE < 3.22
 from gpaw.external import ConstantElectricField
 from ase.calculators.dftd3 import DFTD3
 from ase.vibrations import Vibrations
