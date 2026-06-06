@@ -168,7 +168,7 @@ timing breakdown, memory). The filename is controlled by the `fname` parameter
   I/O. Domain parallelization can be enabled for G0W0/BSE.
 - **Version compatibility**: tested with GPAW 20.1.0–25.7.0 and ASE
   3.20.0–3.28.0 (LCAO-LDA+U on a single core). Results are bitwise identical
-  across versions. The `ExpCellFilter` import adapts to ASE ≥ 3.22 vs. earlier
+  across versions. The `ExpCellFilter` import adapts to ASE ≥ 3.26.0 vs. earlier
   releases automatically.
 
 ## License

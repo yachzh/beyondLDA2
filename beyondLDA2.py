@@ -36,9 +36,9 @@ from gpaw.dipole_correction import DipoleCorrection
 from gpaw.utilities import h2gpts
 from ase.constraints import FixAtoms
 try:
-    from ase.filters import ExpCellFilter  # ASE >= 3.22
+    from ase.filters import ExpCellFilter  # ASE >= 3.26.0
 except ImportError:
-    from ase.constraints import ExpCellFilter  # ASE < 3.22
+    from ase.constraints import ExpCellFilter  # ASE < 3.26.0
 from gpaw.external import ConstantElectricField
 from ase.calculators.dftd3 import DFTD3
 from ase.vibrations import Vibrations
