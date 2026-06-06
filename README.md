@@ -20,6 +20,7 @@ and phonons — all through the `lda_plus_u` class.
 | **Local opt.** | `local_opt()` | Geometry relaxation (BFGS / QuasiNewton), optionally with variable cell |
 | **Global opt.** | `global_opt()` | Minima hopping for global structure search |
 | **Phonons** | `phonon()` | Vibrational frequencies via finite displacements |
+| **DB storage** | `database=` kwarg | Auto-store results to an ase.db database on each calculation |
 
 ## Supported XC functionals
 
@@ -111,7 +112,47 @@ ls     -136.206124  Walltime: 0:01:21
 E_HL =  83.0 kJ/mol
 ```
 
-## Constructor reference
+## Database storage
+
+Pass a `database=` keyword to automatically store calculation results in an
+[ASE SQLite database](https://wiki.fysik.dtu.dk/ase/ase/db/db.html). Queryable
+keys include the formula, method, XC functional, spin state, Hubbard U, and
+result value. Non-queryable metadata (walltime, input_args) is stored in a data
+blob.
+
+```python
+from beyondLDA2_db import LDAPlusUDatabase
+from beyondLDA2 import lda_plus_u
+
+# Open (or create) a database
+db = LDAPlusUDatabase('results.db')
+
+# Store: calculations auto-insert on completion
+dft = lda_plus_u(atoms=atoms, ... database=db)
+
+# Read: query by filter
+for row in db.select(method='electronic_energy', spin_state='hs'):
+    print(f"  {row.id}: {row.formula}  {row.result_value:.4f} eV  U={row.hubbard_u}")
+
+# Fetch by row id
+row = db.get(1)
+print(row.result_value, row.xc, row.spin_pol)
+
+# Reconstruct the Atoms object from a stored row
+atoms = row.toatoms()
+
+# Count entries
+print(db.nrows, db.count(spin_state='hs'))
+
+# Access the raw ase.db for advanced queries
+for row in db.db.select(spin_state='hs'):
+    ...
+
+# Data blob contains non-queryable metadata
+print((row.data or {}).keys())  # e.g. ['walltime', 'input_args']
+```
+
+See `tests/test_database.py` for the full test suite.
 
 ```python
 lda_plus_u(
@@ -148,6 +189,7 @@ lda_plus_u(
     kp_shift=False,                     # Gamma-centered k-points
     domain_parallel=False,              # Domain parallelization
     fname=None                          # Output file basename
+    database=None                       # LDAPlusUDatabase object; auto-stores results
 )
 ```
 
@@ -156,6 +198,9 @@ lda_plus_u(
 Each calculation writes a `.txt` file with the full GPAW log (SCF iterations,
 timing breakdown, memory). The filename is controlled by the `fname` parameter
 (default: `gpaw-{xc}.txt`).
+
+If a `database=` is provided, the result is also stored in an ASE SQLite database
+(see [Database storage](#database-storage) above).
 
 ## Notes
 
@@ -170,6 +215,10 @@ timing breakdown, memory). The filename is controlled by the `fname` parameter
   3.20.0–3.28.0 (LCAO-LDA+U on a single core). Results are bitwise identical
   across versions. The `ExpCellFilter` import adapts to ASE ≥ 3.26.0 vs. earlier
   releases automatically.
+- **Database storage**: `beyondLDA2_db.LDAPlusUDatabase` wraps `ase.db` for
+  persistent result storage. Pass via `database=`. Queryable keys: `formula`,
+  `method`, `xc`, `spin_state`, `hubbard_u`, `result_value` — see
+  [Database storage](#database-storage) for examples.
 
 ## License
 
