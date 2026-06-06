@@ -44,6 +44,13 @@ from ase.calculators.dftd3 import DFTD3
 from ase.vibrations import Vibrations
 from ase.parallel import paropen, parprint, world
 
+# Optional: database integration
+try:
+    from beyondLDA2_db import LDAPlusUDatabase
+    _HAS_DB = True
+except ImportError:
+    _HAS_DB = False
+
 
 def version_compare(current_version, min_version):
     """
@@ -219,10 +226,54 @@ class lda_plus_u:
             semicore=False,
             kp_shift=False,
             domain_parallel=False,
-            fname=None):
+            fname=None,
+            database=None):
         parameters = locals()
         parameters.pop('self')
         self.args = parameters
+
+        # --- Database setup ---
+        self._db = None
+        if database is not None:
+            self._init_database(database)
+
+    def _init_database(self, database):
+        """Attach a database for automatic result storage.
+
+        Accepts either a path string (creates/opens an ase.db file) or
+        an existing ``LDAPlusUDatabase`` instance."""
+        if isinstance(database, (str, Path)):
+            if not _HAS_DB:
+                raise ImportError(
+                    "Cannot import LDAPlusUDatabase. Ensure beyondLDA2_db.py "
+                    "is in the Python path.")
+            self._db = LDAPlusUDatabase(database)
+        elif _HAS_DB and isinstance(database, LDAPlusUDatabase):
+            self._db = database
+        else:
+            raise TypeError(
+                "``database`` must be a file path (str/Path) or an "
+                "LDAPlusUDatabase instance.")
+
+    def _store_result(self, method, result_value, walltime=None, **extra_kvp):
+        """Store a calculation result to the attached database (if any)."""
+        if self._db is None:
+            return
+        args = self.args
+        self._db.store(
+            atoms=args.get('atoms'),
+            method=method,
+            result_value=result_value,
+            label=args.get('fname'),
+            xc=args.get('xc'),
+            spin_state=args.get('spin_state'),
+            hubbard_u=args.get('hubbard_u'),
+            spin_pol=args.get('spin_pol'),
+            planewave=args.get('planewave'),
+            walltime=walltime,
+            input_args=args,
+            **extra_kvp,
+        )
 
     def get_label(self):
         label = self.args['fname']
@@ -371,14 +422,17 @@ class lda_plus_u:
                 magmoms=magnetic_moments)
 
     def get_electronic_energy(self, write_wave=False):
+        start_time = time.time()
         calc = self.get_calc()
         self.args['atoms'].calc = calc
         energy = self.args['atoms'].get_potential_energy()
         if write_wave:
             gpwfile = '%s.gpw' % self.get_label()
             calc.write(gpwfile, mode='all')
+        walltime = time.time() - start_time
         watch_conv(self.get_label() + '.txt',
                    mag_center=self.args['magnetic_center'])
+        self._store_result('electronic_energy', energy, walltime=walltime)
         return energy
 
     def get_ksgap(self, write_wave=False):
@@ -392,6 +446,7 @@ class lda_plus_u:
         f.write(f'Kohn-Sham gap = {gap:.3f} eV\n')
         f.write(f'Walltime: {walltime}\n')
         f.close()
+        self._store_result('ks_gap', gap, walltime=end_time - start_time)
         return gap
 
     def get_gllbscgap(self, write_wave=False):
@@ -413,6 +468,8 @@ class lda_plus_u:
         f.write(f'Calculated band gap: {gap:.3f} eV\n')
         f.write(f'Walltime: {walltime}\n')
         f.close()
+        self._store_result('gllbsc_gap', gap, walltime=end_time - start_time,
+                           gllbsc_ks_gap=Eks, gllbsc_dxc=Dxc)
         return gap
 
     def get_g0w0gap(self,
@@ -495,6 +552,8 @@ class lda_plus_u:
             f.write('Gap not available!\n')
         f.write(f'Walltime: {walltime}\n')
         f.close()
+        self._store_result('g0w0_gap', qp_gap, walltime=end_time - start_time,
+                           g0w0_ks_gap=ks_gap)
         return qp_gap
 
     def setup_bse(
@@ -651,13 +710,19 @@ class lda_plus_u:
         if restart_needed:
             opt.replay_trajectory(fn_traj)
 
+        start_time = time.time()
         opt.run(fmax=force_convergence)
         write('%s-opt.xyz' % self.get_label(), self.args['atoms'])
         write('%s-opt.struct' % self.get_label(), self.args['atoms'])
         write('%s-opt.vasp' % self.get_label(), self.args['atoms'])
         energy = self.args['atoms'].get_potential_energy()
+        walltime = time.time() - start_time
         watch_conv(self.get_label() + '.txt',
                    mag_center=self.args['magnetic_center'])
+
+        self._store_result('local_opt', energy, walltime=walltime,
+                           force_convergence=force_convergence,
+                           opt_steps=opt.get_number_of_steps() if hasattr(opt, 'get_number_of_steps') else None)
 
         return energy
 
