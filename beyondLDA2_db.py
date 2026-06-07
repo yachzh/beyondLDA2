@@ -7,7 +7,7 @@ Each call to a ``lda_plus_u.get_*`` method inserts one row containing:
 - **Atoms object** — enables structure round-trip via ``row.toatoms()``
 - **Key-value pairs** (queryable): ``formula``, ``method``, ``xc``,
   ``spin_state``, ``hubbard_u``, ``label``, ``result_value``,
-  ``spin_pol``, ``planewave``
+  ``spin_pol``, ``planewave``, ``created_utc``, ``creator``
 - **``data`` blob** (non-queryable but restorable): input parameters,
   result breakdowns (e.g. E_ks, D_xc for GLLBSC), walltime, magnetic
   moment, GPAW version
@@ -34,6 +34,8 @@ Usage — analysis::
 """
 
 from pathlib import Path
+import getpass
+from datetime import datetime, timezone
 import ase.db
 from ase.db.core import Database
 
@@ -87,6 +89,15 @@ class LDAPlusUDatabase:
             Additional key-value pairs stored as queryable fields.
             Avoid keys reserved by ase.db (see ``_RESERVED_KEYS``).
 
+        Notes
+        -----
+        Two fields are **automatically** added to every row:
+
+        * ``created_utc`` — ISO 8601 UTC timestamp of when the row was written,
+          e.g. ``"2026-06-07T12:34:56Z"``.
+        * ``creator`` — system username (via ``getpass.getuser()``) of the
+          account that ran the calculation.
+
         Returns
         -------
         int
@@ -96,6 +107,8 @@ class LDAPlusUDatabase:
         kvp = dict(extra_kvp)
         kvp['method'] = method
         kvp['result_value'] = result_value
+        kvp['created_utc'] = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+        kvp['creator'] = getpass.getuser()
         if label is not None:
             kvp['label'] = label
         if xc is not None:

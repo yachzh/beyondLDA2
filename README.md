@@ -116,9 +116,10 @@ E_HL =  83.0 kJ/mol
 
 Pass a `database=` keyword to automatically store calculation results in an
 [ASE SQLite database](https://wiki.fysik.dtu.dk/ase/ase/db/db.html). Queryable
-keys include the formula, method, XC functional, spin state, Hubbard U, and
-result value. Non-queryable metadata (walltime, input_args) is stored in a data
-blob.
+keys include the formula, method, XC functional, spin state, Hubbard U,
+result value, creator (system username), and UTC creation timestamp
+(``created_utc``). Non-queryable metadata (walltime, input_args) is stored in a
+data blob.
 
 ```python
 from beyondLDA2_db import LDAPlusUDatabase
@@ -217,8 +218,8 @@ If a `database=` is provided, the result is also stored in an ASE SQLite databas
   releases automatically.
 - **Database storage**: `beyondLDA2_db.LDAPlusUDatabase` wraps `ase.db` for
   persistent result storage. Pass via `database=`. Queryable keys: `formula`,
-  `method`, `xc`, `spin_state`, `hubbard_u`, `result_value` — see
-  [Database storage](#database-storage) for examples.
+  `method`, `xc`, `spin_state`, `hubbard_u`, `result_value`, `created_utc`,
+  `creator` — see [Database storage](#database-storage) for examples.
 
 ## License
 

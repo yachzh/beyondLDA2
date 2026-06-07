@@ -169,6 +169,22 @@ def test_db_api():
     print(f"  Reconstructed: {atoms_rt.get_chemical_formula()}"
           f"  ({len(atoms_rt)} atoms)")
 
+    # --- 7. Verify auto-added fields ---
+    print("\n--- Auto-added fields (created_utc, creator) ---")
+    row = all_rows[0]
+    print(f"  created_utc = {row.created_utc}")
+    print(f"  creator = {row.creator}")
+    assert row.created_utc.endswith('Z'), "created_utc should be ISO 8601 UTC"
+    assert isinstance(row.creator, str) and len(row.creator) > 0
+    print("  ✓ Both fields present and valid")
+
+    # Filter by creator
+    rows_by_me = db.select(creator=row.creator)
+    print(f"  Rows by '{row.creator}': {len(rows_by_me)}/{db.nrows}")
+    assert len(rows_by_me) == db.nrows
+
+    assert len(rows_by_me) == db.nrows
+
     # Cleanup
     os.unlink(db_path)
     print(f"\n  Cleaned up temp database.")
