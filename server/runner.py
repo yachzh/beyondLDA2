@@ -22,21 +22,53 @@ def _build_script(payload: dict) -> str:
     params = payload.get("parameters", {})
 
     # Build the kwargs dict for lda_plus_u constructor
+    constructor_keys = {
+        "xc", "hubbard_u", "magnetic_center", "spin_state",
+        "planewave", "pwcut", "kmesh", "beta", "nmaxold", "weight",
+        "maxcycl", "etol", "dentol", "eigentol", "symmetry",
+        "temperature", "vdw", "charge", "efield", "high_ox",
+        "spin_pol", "fixspin", "isMol", "magmoms", "nbands",
+        "conv_bands", "dipcorr", "conv_default", "semicore",
+        "kp_shift", "domain_parallel",
+    }
+    # Method-specific params (used in dispatch, not in constructor)
+    method_params_map = {
+        "local_opt": {"force_convergence"},
+        "g0w0_gap": {"ecut", "ppa"},
+        "absorption": {"ecut"},
+    }
+    method_params = method_params_map.get(calc_type, set())
+
     kwarg_entries = []
+    method_kwarg_pairs = []
     for k, v in params.items():
         if v is None:
             continue
-        if isinstance(v, bool):
-            kwarg_entries.append(f'    "{k}": {str(v)},')
-        elif isinstance(v, str):
-            kwarg_entries.append(f'    "{k}": "{v}",')
-        elif isinstance(v, list):
-            kwarg_entries.append(f'    "{k}": {json.dumps(v)},')
-        else:
-            kwarg_entries.append(f'    "{k}": {v},')
+        if k in constructor_keys:
+            if isinstance(v, bool):
+                kwarg_entries.append(f'    "{k}": {str(v)},')
+            elif isinstance(v, str):
+                kwarg_entries.append(f'    "{k}": "{v}",')
+            elif isinstance(v, list):
+                kwarg_entries.append(f'    "{k}": {json.dumps(v)},')
+            else:
+                kwarg_entries.append(f'    "{k}": {v},')
+        elif k in method_params:
+            if isinstance(v, bool):
+                method_kwarg_pairs.append(f'{k}={str(v)}')
+            elif isinstance(v, str):
+                method_kwarg_pairs.append(f'{k}="{v}"')
+            else:
+                method_kwarg_pairs.append(f'{k}={v}')
     kwargs_str = "\n".join(kwarg_entries)
+    method_kwargs_str = ",\n        ".join(method_kwarg_pairs)
 
     # Dispatch per calculation type
+    if method_kwargs_str:
+        method_call_suffix = f",\n        {method_kwargs_str}"
+    else:
+        method_call_suffix = ""
+
     calc_dispatch = {
         "electronic_energy": (
             '    result["energy"] = dft.get_electronic_energy()'
@@ -48,23 +80,16 @@ def _build_script(payload: dict) -> str:
             '    result["gllbsc_gap"] = dft.get_gllbscgap()'
         ),
         "g0w0_gap": (
-            '    gap = dft.get_g0w0gap(\n'
-            '        ecut=params.get("ecut", 150),\n'
-            '        ppa=params.get("ppa", False),\n'
-            '    )\n'
+            f'    gap = dft.get_g0w0gap({method_call_suffix})\n'
             '    result["g0w0_gap"] = gap'
         ),
         "local_opt": (
-            '    energy = dft.local_opt(\n'
-            '        force_convergence=params.get("force_convergence", 0.02),\n'
-            '    )\n'
+            f'    energy = dft.local_opt({method_call_suffix})\n'
             '    result["energy"] = energy\n'
             '    result["opt_geometry"] = dft.args["atoms"].positions.tolist()'
         ),
         "absorption": (
-            '    hw, abs_w = dft.get_absorption(\n'
-            '        ecut=params.get("ecut", 50),\n'
-            '    )\n'
+            f'    hw, abs_w = dft.get_absorption({method_call_suffix})\n'
             '    result["absorption_energies"] = hw.tolist()\n'
             '    result["absorption_spectrum"] = abs_w.tolist()'
         ),
@@ -82,6 +107,23 @@ import sys
 import json
 import traceback
 from pathlib import Path
+
+# Honor PYTHONPATH; fall back to inserting a parent-directory guess
+_HERE = Path(__file__).resolve().parent
+if "beyondLDA2" not in sys.modules and not any(
+    "beyondLDA2" in p for p in sys.path
+):
+    # Check a few common locations relative to the script
+    for _guess in [
+        _HERE,
+        _HERE.parent,
+        _HERE.parent.parent,
+        _HERE.parent.parent / "beyondLDA2",
+        _HERE.parent.parent.parent / "beyondLDA2",
+    ]:
+        if (_guess / "beyondLDA2.py").exists():
+            sys.path.insert(0, str(_guess))
+            break
 
 import gpaw
 print(f"GPAW version: {{gpaw.__version__}}", flush=True)
@@ -113,8 +155,6 @@ def build_structure(data: dict, work_dir: Path) -> Atoms:
 
 
 def main():
-    _HERE = Path(__file__).resolve().parent
-
     # --- Load input ---
     with open(_HERE / "input.json") as f:
         payload = json.load(f)
