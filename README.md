@@ -231,7 +231,10 @@ the `server/` directory. Built with FastAPI + Celery + PostgreSQL:
 - Worker runs GPAW via `mpirun gpaw python`
 - Job queue backed by PostgreSQL, task broker via Redis
 
-See [`server/README.md`](server/README.md) for documentation and quick start.
+See [`server/README.md`](server/README.md) for full documentation, including a
+**complete end-to-end walkthrough** of computing the HS–LS energy splitting of
+ferrocene via the API (submitting jobs, polling for results, and extracting
+the energy in eV and kJ/mol).
 
 ```bash
 cd server
