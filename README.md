@@ -68,8 +68,8 @@ standard location (e.g., inside a virtual environment).
 
 ## Quick start
 
-Compute the high-spin / low-spin energy splitting for an Fe-porphyrin-like
-molecule:
+Compute the high-spin / low-spin energy splitting for ferrocene
+(Fe(C₅H₅)₂):
 
 ```python
 import time
