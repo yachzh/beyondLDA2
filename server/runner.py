@@ -172,7 +172,7 @@ def main():
     }}
     kwargs["atoms"] = atoms
     kwargs["fname"] = label
-    if "magnetic_center" in kwargs:
+    if kwargs.get("magnetic_center"):
         kwargs["magnetic_center"] = kwargs["magnetic_center"].capitalize()
 
     # Attach database if requested

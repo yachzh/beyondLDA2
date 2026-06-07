@@ -69,20 +69,31 @@ class CalcParameters(BaseModel):
 
     xc: XCFunctional = XCFunctional.LDA
     hubbard_u: float = 0.0
-    magnetic_center: str = "Fe"
-    spin_state: SpinState = SpinState.LS
+    magnetic_center: str | None = None
+    spin_state: SpinState | None = None
     planewave: bool = False
     pwcut: int = 450
     kmesh: list[int] = [1, 1, 1]
     beta: float = 0.07
+    nmaxold: int = 5
+    weight: float = 10.0
     maxcycl: int = 500
     etol: float = 1.0e-6
     dentol: float = 1.0e-6
+    eigentol: float = 1.0e-8
+    symmetry: bool = False
     temperature: float = 300.0
     charge: float = 0.0
+    spin_pol: bool = True
     fixspin: bool = True
     isMol: bool = False
     nbands: int | None = None
+    conv_bands: int | None = None
+    dipcorr: bool = False
+    conv_default: bool = False
+    semicore: bool = False
+    kp_shift: bool = False
+    domain_parallel: bool = False
 
     # Type-specific extras
     force_convergence: float | None = Field(
