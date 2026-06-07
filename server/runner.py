@@ -118,6 +118,7 @@ Filesystem-free: input embedded, GPAW txt='-', results on stdout.
 import sys
 import json
 import traceback
+from datetime import datetime, timezone
 from pathlib import Path
 
 # Honor PYTHONPATH; fall back to inserting a parent-directory guess
@@ -204,6 +205,7 @@ def main():
     result["label"] = label
     result["calculation_type"] = calc_type
     result["gpaw_version"] = gpaw.__version__
+    result["start_time"] = datetime.now(timezone.utc).isoformat()
 
 {dispatch_block}
 
@@ -213,6 +215,7 @@ def main():
         result["final_positions"] = atoms.positions.tolist()
 
     # --- Emit result to stdout (no files written) ---
+    result["end_time"] = datetime.now(timezone.utc).isoformat()
     print("===BEYONDLDA2_RESULT===", flush=True)
     json.dump(result, sys.stdout, indent=2, default=str)
     print(flush=True)

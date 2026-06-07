@@ -8,6 +8,7 @@ and writes results back to PostgreSQL.
 
 from __future__ import annotations
 
+import getpass
 import json
 import os
 import subprocess
@@ -138,6 +139,7 @@ def run_gpaw_calculation(self, job_id: int, payload: dict):
             return {"job_id": job_id, "status": "failed", "error": parsed["error"]}
 
         # Success — store full stdout (SCF log + result) as fdf_output
+        parsed["creator"] = getpass.getuser()
         _update_job(
             job_id,
             status="completed",
