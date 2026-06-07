@@ -42,8 +42,8 @@ Magnetic moments are assigned automatically to the element matching
 
 ## Requirements
 
-- **GPAW** ≥ 20.1.0 (tested with 20.1.0, 24.6.0, 25.7.0)
-- **ASE** ≥ 3.20.0 (tested with 3.20.0, 3.25.0, 3.28.0)
+- **GPAW** ≥ 20.1.0 (tested with 20.1.0, 22.8.0, 24.6.0, 25.7.0)
+- **ASE** ≥ 3.20.0 (tested with 3.20.0, 3.22.1, 3.25.0, 3.28.0)
 - **libxc** ≥ 5.2.3 (required by GPAW)
 - numpy, scipy
 
