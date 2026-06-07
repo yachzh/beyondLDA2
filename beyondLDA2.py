@@ -231,6 +231,7 @@ class lda_plus_u:
             kp_shift=False,
             domain_parallel=False,
             fname=None,
+            txt=None,
             database=None):
         parameters = locals()
         parameters.pop('self')
@@ -314,7 +315,7 @@ class lda_plus_u:
             'kpts': self.args['kmesh'],
             'xc': xc_label[self.args['xc'].lower()],
             'spinpol': self.args['spin_pol'],
-            'txt': self.get_label() + '.txt'
+            'txt': self.args['txt'] if self.args['txt'] is not None else self.get_label() + '.txt'
         }
         if self.args['planewave']:
             inic['mode'] = PW(self.args['pwcut'])
@@ -396,7 +397,8 @@ class lda_plus_u:
         if self.args['vdw']:
             d3 = DFTD3(dft=calc)
             return d3
-        log_job_path(self.get_label() + '.txt')
+        if self.args['txt'] != '-':
+            log_job_path(self.get_label() + '.txt')
         return calc
 
     def set_magnetic_moment(self):
@@ -434,8 +436,9 @@ class lda_plus_u:
             gpwfile = '%s.gpw' % self.get_label()
             calc.write(gpwfile, mode='all')
         walltime = time.time() - start_time
-        watch_conv(self.get_label() + '.txt',
-                   mag_center=self.args['magnetic_center'])
+        if self.args['txt'] != '-':
+            watch_conv(self.get_label() + '.txt',
+                       mag_center=self.args['magnetic_center'])
         self._store_result('electronic_energy', energy, walltime=walltime)
         return energy
 
@@ -721,8 +724,9 @@ class lda_plus_u:
         write('%s-opt.vasp' % self.get_label(), self.args['atoms'])
         energy = self.args['atoms'].get_potential_energy()
         walltime = time.time() - start_time
-        watch_conv(self.get_label() + '.txt',
-                   mag_center=self.args['magnetic_center'])
+        if self.args['txt'] != '-':
+            watch_conv(self.get_label() + '.txt',
+                       mag_center=self.args['magnetic_center'])
 
         self._store_result('local_opt', energy, walltime=walltime,
                            force_convergence=force_convergence,

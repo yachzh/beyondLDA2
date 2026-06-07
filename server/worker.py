@@ -110,29 +110,39 @@ def run_gpaw_calculation(self, job_id: int, payload: dict):
             env=env,
         )
 
-        # Read output.json
-        output_path = job_dir / "output.json"
-        if output_path.exists():
-            with open(output_path) as f:
-                parsed = json.load(f)
-        else:
-            parsed = {"error": "No output.json produced"}
+        # Parse result from stdout (between ===BEYONDLDA2_RESULT=== markers)
+        # The script streams full GPAW SCF output to stdout via txt='-',
+        # then appends a JSON result block.
+        stdout = result.stdout
+        parsed = _parse_result_stdout(stdout)
 
-        # Check for errors
+        if parsed is None:
+            # No valid result block found — report raw output
+            error_detail = stdout.strip() or result.stderr.strip() or "No output produced"
+            _update_job(
+                job_id,
+                status="failed",
+                error_log=error_detail,
+                fdf_output=stdout,
+            )
+            return {"job_id": job_id, "status": "failed", "error": error_detail}
+
+        # Check for errors reported by the script itself
         if "error" in parsed and parsed["error"]:
             _update_job(
                 job_id,
                 status="failed",
                 error_log=parsed.get("traceback", parsed["error"]),
+                fdf_output=stdout,
             )
             return {"job_id": job_id, "status": "failed", "error": parsed["error"]}
 
-        # Success
+        # Success — store full stdout (SCF log + result) as fdf_output
         _update_job(
             job_id,
             status="completed",
             parsed_results=parsed,
-            fdf_output=result.stdout,
+            fdf_output=stdout,
         )
         return {"job_id": job_id, "status": "completed", "results": parsed}
 
@@ -145,3 +155,30 @@ def run_gpaw_calculation(self, job_id: int, payload: dict):
         tb = traceback.format_exc()
         _update_job(job_id, status="failed", error_log=f"{type(e).__name__}: {e}\n{tb}")
         raise
+
+
+def _parse_result_stdout(stdout: str) -> dict | None:
+    """Extract the JSON result block from stdout between the
+    ``===BEYONDLDA2_RESULT===`` and ``===END_BEYONDLDA2_RESULT===`` markers.
+
+    Returns the parsed dict, or None if the markers are not found.
+    """
+    start_marker = "===BEYONDLDA2_RESULT==="
+    end_marker = "===END_BEYONDLDA2_RESULT==="
+
+    start_idx = stdout.find(start_marker)
+    if start_idx == -1:
+        return None
+    content_start = start_idx + len(start_marker)
+
+    end_idx = stdout.find(end_marker, content_start)
+    if end_idx == -1:
+        return None
+
+    json_str = stdout[content_start:end_idx].strip()
+    if not json_str:
+        return None
+    try:
+        return json.loads(json_str)
+    except json.JSONDecodeError:
+        return None
