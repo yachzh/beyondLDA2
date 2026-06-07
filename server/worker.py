@@ -92,6 +92,8 @@ def run_gpaw_calculation(self, job_id: int, payload: dict):
     env = os.environ.copy()
     if settings.GPAW_SETUP_PATH:
         env["GPAW_SETUP_PATH"] = settings.GPAW_SETUP_PATH
+    if settings.PYTHON_PATH:
+        env["PYTHONPATH"] = f"{settings.PYTHON_PATH}:{env.get('PYTHONPATH', '')}"
 
     # --- Build command ---
     nprocs = settings.MPI_NPROCS

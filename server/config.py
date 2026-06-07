@@ -44,6 +44,7 @@ class Settings:
     WORK_DIR: str = os.getenv("WORK_DIR", "/tmp/beyondlda2-jobs")
     MPI_NPROCS: int = int(os.getenv("MPI_NPROCS", "4"))
     GPAW_SETUP_PATH: str | None = os.getenv("GPAW_SETUP_PATH")
+    PYTHON_PATH: str | None = os.getenv("PYTHON_PATH")
 
     # --- ASE DB (scientific results) ---
     ASE_DB_DIR: str = os.getenv("ASE_DB_DIR", "/data/ase-dbs")

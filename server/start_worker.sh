@@ -47,6 +47,7 @@ mkdir -p "${WORK_DIR}"
 export DB_HOST DB_PORT DB_NAME DB_USER DB_PASSWORD
 export REDIS_HOST REDIS_PORT
 export WORK_DIR
+export PYTHON_PATH="${PYTHON_PATH:-/home/clackyuser/clacky_workspace/beyondLDA2}"
 
 # ── Start worker ─────────────────────────────────────────────────────────
 echo ""
