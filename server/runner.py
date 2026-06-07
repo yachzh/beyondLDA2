@@ -145,12 +145,12 @@ def build_structure(data: dict, work_dir: Path) -> Atoms:
         return read(str(tmp_path), format=fmt)
 
     symbols = [a["symbol"] for a in atoms_data]
-    positions = [[a["x"], a["y"], a["z"]] for a in atoms_data]
+    scaled_positions = [[a["x"], a["y"], a["z"]] for a in atoms_data]
     cell = data.get("cell")
     pbc = data.get("pbc", [True, True, True])
     if pbc and isinstance(pbc[0], int):
         pbc = [bool(p) for p in pbc]
-    atoms = Atoms(symbols=symbols, positions=positions, cell=cell, pbc=pbc)
+    atoms = Atoms(symbols=symbols, scaled_positions=scaled_positions, cell=cell, pbc=pbc)
     return atoms
 
 
