@@ -221,6 +221,24 @@ If a `database=` is provided, the result is also stored in an ASE SQLite databas
   `method`, `xc`, `spin_state`, `hubbard_u`, `result_value`, `created_utc`,
   `creator` — see [Database storage](#database-storage) for examples.
 
+## REST API Server
+
+An async REST API for submitting GPAW calculations remotely is available in
+the `server/` directory. Built with FastAPI + Celery + PostgreSQL:
+
+- Submit calculations via `POST /api/v1/calculate` (async, returns job ID)
+- Poll results via `GET /api/v1/jobs/:id`
+- Worker runs GPAW via `mpirun gpaw python`
+- Job queue backed by PostgreSQL, task broker via Redis
+
+See [`server/README.md`](server/README.md) for documentation and quick start.
+
+```bash
+cd server
+docker compose up -d
+curl http://localhost:8000/api/v1/status
+```
+
 ## License
 
 MIT

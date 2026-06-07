@@ -1,0 +1,93 @@
+# docker-compose.yml
+# Starts the full beyondLDA2 API stack:
+#   PostgreSQL   → job queue storage
+#   Redis        → Celery broker
+#   API Server   → FastAPI (port 8000)
+#   Worker       → Celery worker (runs GPAW calculations)
+#
+# Usage:
+#   docker compose up -d
+#   curl http://localhost:8000/api/v1/status
+
+services:
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: beyondlda2
+      POSTGRES_USER: beyondlda2
+      POSTGRES_PASSWORD: beyondlda2
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U beyondlda2"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  api:
+    build:
+      context: ..
+      dockerfile: server/Dockerfile
+    command: >
+      uvicorn server.api:app --host 0.0.0.0 --port 8000
+    ports:
+      - "8000:8000"
+    environment:
+      DB_HOST: postgres
+      REDIS_HOST: redis
+      GPAW_SETUP_PATH: /usr/share/gpaw
+    volumes:
+      - ase_dbs:/data/ase-dbs
+      - ../beyondLDA2.py:/app/beyondLDA2.py
+      - ../beyondLDA2_db.py:/app/beyondLDA2_db.py
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  worker:
+    build:
+      context: ..
+      dockerfile: server/Dockerfile
+    command: celery -A server.worker worker --loglevel=info --concurrency=1
+    environment:
+      DB_HOST: postgres
+      REDIS_HOST: redis
+      GPAW_SETUP_PATH: /usr/share/gpaw
+      MPI_NPROCS: "4"
+    volumes:
+      - ase_dbs:/data/ase-dbs
+      - job_workdirs:/tmp/beyondlda2-jobs
+      - ../beyondLDA2.py:/app/beyondLDA2.py
+      - ../beyondLDA2_db.py:/app/beyondLDA2_db.py
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    # Workers need shared memory for MPI
+    shm_size: "2gb"
+    deploy:
+      resources:
+        limits:
+          cpus: "4"
+          memory: "16g"
+
+volumes:
+  pgdata:
+  ase_dbs:
+  job_workdirs:
