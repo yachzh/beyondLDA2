@@ -120,6 +120,7 @@ if "beyondLDA2" not in sys.modules and not any(
         _HERE.parent.parent,
         _HERE.parent.parent / "beyondLDA2",
         _HERE.parent.parent.parent / "beyondLDA2",
+        Path("/app"),
     ]:
         if (_guess / "beyondLDA2.py").exists():
             sys.path.insert(0, str(_guess))
@@ -147,8 +148,10 @@ def build_structure(data: dict, work_dir: Path) -> Atoms:
     symbols = [a["symbol"] for a in atoms_data]
     scaled_positions = [[a["x"], a["y"], a["z"]] for a in atoms_data]
     cell = data.get("cell")
-    pbc = data.get("pbc", [True, True, True])
-    if pbc and isinstance(pbc[0], int):
+    pbc = data.get("pbc")
+    if pbc is None:
+        pbc = [True, True, True]
+    elif isinstance(pbc[0], int):
         pbc = [bool(p) for p in pbc]
     atoms = Atoms(symbols=symbols, scaled_positions=scaled_positions, cell=cell, pbc=pbc)
     return atoms

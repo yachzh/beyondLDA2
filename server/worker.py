@@ -84,8 +84,8 @@ def run_gpaw_calculation(self, job_id: int, payload: dict):
     work_dir.mkdir(parents=True, exist_ok=True)
 
     # --- Write job files ---
-    write_job_dir(req, str(work_dir), label=label)
-    script_path = work_dir / "script.py"
+    job_dir = write_job_dir(req, str(work_dir), label=label)
+    script_path = job_dir / "script.py"
 
     # --- Prepare environment ---
     env = os.environ.copy()
@@ -95,7 +95,7 @@ def run_gpaw_calculation(self, job_id: int, payload: dict):
     # --- Build command ---
     nprocs = settings.MPI_NPROCS
     if nprocs > 1:
-        cmd = ["mpirun", "-np", str(nprocs), "gpaw", "python", str(script_path)]
+        cmd = ["mpirun", "--allow-run-as-root", "-np", str(nprocs), "gpaw", "python", str(script_path)]
     else:
         cmd = ["gpaw", "python", str(script_path)]
 
@@ -111,7 +111,7 @@ def run_gpaw_calculation(self, job_id: int, payload: dict):
         )
 
         # Read output.json
-        output_path = work_dir / "output.json"
+        output_path = job_dir / "output.json"
         if output_path.exists():
             with open(output_path) as f:
                 parsed = json.load(f)

@@ -1,0 +1,45 @@
+# docker-compose.cloud.yml
+# Cloud server deployment — lightweight API + Redis (no PostgreSQL in Docker).
+# PostgreSQL runs natively on the host at port 5432.
+# Redis is localhost-only; SSH tunnel forwards it to the compute server.
+#
+# Usage:
+#   docker compose -f docker-compose.cloud.yml up -d
+#
+# For production, put behind Nginx/Caddy reverse proxy with TLS.
+
+services:
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "127.0.0.1:6381:6379"      # localhost-only; SSH tunnel forwards to compute
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  api:
+    image: beyondlda2-api:latest
+    build:
+      context: ..
+      dockerfile: server/Dockerfile.api
+    command: >
+      uvicorn server.api:app --host 0.0.0.0 --port 8000
+    ports:
+      - "127.0.0.1:8000:8000"       # localhost-only; reverse proxy exposes publicly
+    environment:
+      DB_HOST: host.docker.internal
+      DB_PORT: "5432"
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      DB_PASSWORD: ${DB_PASSWORD:-beyondlda2}
+      WORK_DIR: /tmp/beyondlda2-jobs
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped

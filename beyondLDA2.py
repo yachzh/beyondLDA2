@@ -99,7 +99,11 @@ def qpbandgap(result):
 
 
 def band_gap(calc):
-    ef = calc.get_fermi_level()
+    try:
+        ef = calc.get_fermi_level()
+    except ValueError:
+        # Spin-polarized: average the two Fermi levels
+        ef = np.mean([calc.get_fermi_level(spin=s) for s in range(calc.get_number_of_spins())])
     Nb = calc.wfs.bd.nbands
     w_k = calc.wfs.kd.weight_k
     x = 0

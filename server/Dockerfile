@@ -18,10 +18,10 @@ WORKDIR /build
 RUN pip install --no-cache-dir pip setuptools wheel numpy
 
 # Download and build GPAW
-ARG GPAW_VERSION=24.6.0
+ARG GPAW_VERSION=25.7.0
 RUN pip install --no-cache-dir gpaw==${GPAW_VERSION} ase
 
-RUN python -c "from gpaw import GPAW; print(f'GPAW {GPAW.__version__} built OK')"
+RUN python -c "import gpaw; print(f'GPAW {gpaw.__version__} built OK')"
 
 # ── Runtime stage ──────────────────────────────────────────────────────
 FROM base AS runtime
