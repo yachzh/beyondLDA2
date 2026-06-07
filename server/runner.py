@@ -161,14 +161,14 @@ def build_structure(data: dict) -> Atoms:
         return atoms
 
     symbols = [a["symbol"] for a in atoms_data]
-    scaled_positions = [[a["x"], a["y"], a["z"]] for a in atoms_data]
+    positions = [[a["x"], a["y"], a["z"]] for a in atoms_data]
     cell = data.get("cell")
     pbc = data.get("pbc")
     if pbc is None:
         pbc = [True, True, True]
     elif isinstance(pbc[0], int):
         pbc = [bool(p) for p in pbc]
-    return Atoms(symbols=symbols, scaled_positions=scaled_positions, cell=cell, pbc=pbc)
+    return Atoms(symbols=symbols, positions=positions, cell=cell, pbc=pbc)
 
 
 def main():
